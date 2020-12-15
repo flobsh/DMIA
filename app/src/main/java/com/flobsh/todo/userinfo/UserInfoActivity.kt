@@ -11,13 +11,16 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
 import android.widget.Button
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
 import com.flobsh.todo.network.Api
 import kotlinx.coroutines.launch
@@ -34,6 +37,11 @@ class UserInfoActivity : AppCompatActivity() {
         val takePictureButton = findViewById<Button>(R.id.take_picture_button)
         takePictureButton.setOnClickListener {
             askCameraPermissionAndOpenCamera()
+        }
+
+        val pickPhotoButton = findViewById<Button>(R.id.upload_image_button)
+        pickPhotoButton.setOnClickListener {
+            pickInGallery.launch("image/*")
         }
     }
 
@@ -68,16 +76,13 @@ class UserInfoActivity : AppCompatActivity() {
     }
 
     // register
-    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        val tmpFile = File.createTempFile("avatar", "jpeg")
-        tmpFile.outputStream().use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
-        }
-        handleImage(tmpFile.toUri())
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) handleImage(photoUri)
+        else Toast.makeText(this, "Erreur ! 😢", Toast.LENGTH_LONG).show()
     }
 
     // use
-    private fun openCamera() = takePicture.launch()
+    private fun openCamera() = takePicture.launch(photoUri)
 
     // convert
     private fun convert(uri: Uri) =
@@ -93,4 +98,19 @@ class UserInfoActivity : AppCompatActivity() {
         }
     }
 
+    // create a temp file and get a uri for it
+    private val photoUri by lazy {
+        FileProvider.getUriForFile(
+            this,
+            BuildConfig.APPLICATION_ID +".fileprovider",
+            File.createTempFile("avatar", ".jpeg", externalCacheDir)
+
+        )
+    }
+
+    // register
+    private val pickInGallery =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            handleImage(uri)
+        }
 }

@@ -22,12 +22,15 @@ import com.flobsh.todo.network.TasksRepository
 import com.flobsh.todo.task.TaskActivity
 import com.flobsh.todo.task.TaskActivity.Companion.ADD_TASK_REQUEST_CODE
 import com.flobsh.todo.userinfo.UserInfoActivity
+import com.flobsh.todo.userinfo.UserInfoViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 
 class TaskListFragment : Fragment() {
     private val adapter = TaskListAdapter()
     private val viewModel: TaskListViewModel by viewModels()
+    private val userViewModel: UserInfoViewModel by viewModels()
+
     lateinit var userView: TextView
     lateinit var userAvatar: ImageView
 
@@ -52,6 +55,11 @@ class TaskListFragment : Fragment() {
         viewModel.taskList.observe(viewLifecycleOwner) { newList ->
             adapter.submitList(newList)
             adapter.notifyDataSetChanged()
+        }
+
+        userViewModel.userInfo.observe(viewLifecycleOwner) { userInfo ->
+            userView.text = "${userInfo.firstName} ${userInfo.lastName}"
+            userAvatar.load(userInfo.avatar)
         }
 
         adapter.onDeleteClickListener = {
@@ -84,11 +92,7 @@ class TaskListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch {
-            val userInfo = Api.userService.getInfo().body()!!
-            userView.text = "${userInfo.firstName} ${userInfo.lastName}"
-            userAvatar.load(userInfo.avatar)
-        }
+        userViewModel.loadUserInfo()
         viewModel.loadTasks()
     }
 }
