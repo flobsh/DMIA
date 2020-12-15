@@ -31,7 +31,7 @@ class TaskActivity : Activity() {
         button.setOnClickListener {
             val newTask = Task(id = UUID.randomUUID().toString(), title = titleEditor.text.toString(), description = descriptionEditor.text.toString())
             intent?.putExtra(TASK_KEY, newTask)
-            setResult(ADD_TASK_REQUEST_CODE, intent)
+            setResult(RESULT_OK, intent)
             finish()
         }
     }
