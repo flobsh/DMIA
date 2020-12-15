@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -14,11 +15,13 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.flobsh.todo.R
 import com.flobsh.todo.network.Api
 import com.flobsh.todo.network.TasksRepository
 import com.flobsh.todo.task.TaskActivity
 import com.flobsh.todo.task.TaskActivity.Companion.ADD_TASK_REQUEST_CODE
+import com.flobsh.todo.userinfo.UserInfoActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 
@@ -26,6 +29,7 @@ class TaskListFragment : Fragment() {
     private val adapter = TaskListAdapter()
     private val viewModel: TaskListViewModel by viewModels()
     lateinit var userView: TextView
+    lateinit var userAvatar: ImageView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,6 +59,11 @@ class TaskListFragment : Fragment() {
         }
 
         userView = view.findViewById<TextView>(R.id.user_info)
+        userAvatar = view.findViewById(R.id.user_avatar)
+        userAvatar.setOnClickListener {
+            val intent = Intent(activity, UserInfoActivity::class.java)
+            startActivity(intent)
+        }
 
         val button = view.findViewById<FloatingActionButton>(R.id.floatingActionButton)
         button.setOnClickListener() {
@@ -78,6 +87,7 @@ class TaskListFragment : Fragment() {
         lifecycleScope.launch {
             val userInfo = Api.userService.getInfo().body()!!
             userView.text = "${userInfo.firstName} ${userInfo.lastName}"
+            userAvatar.load(userInfo.avatar)
         }
         viewModel.loadTasks()
     }
