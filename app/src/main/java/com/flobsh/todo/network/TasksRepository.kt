@@ -6,7 +6,7 @@ import com.flobsh.todo.tasklist.Task
 import com.flobsh.todo.tasklist.TaskListViewModel
 
 class TasksRepository {
-    private val tasksWebService = Api.tasksWebService
+    private val tasksWebService = Api.INSTANCE.tasksWebService
 
     // Ces deux variables encapsulent la même donnée:
     // [_taskList] est modifiable mais privée donc inaccessible à l'extérieur de cette classe

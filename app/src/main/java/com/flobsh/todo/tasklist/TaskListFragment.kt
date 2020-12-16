@@ -7,16 +7,22 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.flobsh.todo.MainActivity
 import com.flobsh.todo.R
+import com.flobsh.todo.authentication.AuthenticationActivity
+import com.flobsh.todo.authentication.SHARED_PREF_TOKEN_KEY
 import com.flobsh.todo.network.Api
 import com.flobsh.todo.network.TasksRepository
 import com.flobsh.todo.task.TaskActivity
@@ -44,7 +50,7 @@ class TaskListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         lifecycleScope.launch {
-            val response = Api.userService.getInfo()
+            val response = Api.INSTANCE.userService.getInfo()
             Log.e("Created", response.body()?.email ?: "none")
         }
 
@@ -70,6 +76,16 @@ class TaskListFragment : Fragment() {
         userAvatar = view.findViewById(R.id.user_avatar)
         userAvatar.setOnClickListener {
             val intent = Intent(activity, UserInfoActivity::class.java)
+            startActivity(intent)
+        }
+
+        val signOutButton = view.findViewById<ImageButton>(R.id.sign_out_button)
+        signOutButton.setOnClickListener {
+            val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
+            editor.putString(SHARED_PREF_TOKEN_KEY, "")
+            editor.apply()
+
+            val intent = Intent(activity, AuthenticationActivity::class.java)
             startActivity(intent)
         }
 

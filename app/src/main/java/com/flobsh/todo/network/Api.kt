@@ -1,16 +1,19 @@
 package com.flobsh.todo.network
 
+import android.content.Context
+import androidx.preference.PreferenceManager
+import com.flobsh.todo.authentication.SHARED_PREF_TOKEN_KEY
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 
-object Api {
-
-    // constantes qui serviront à faire les requêtes
-    private const val BASE_URL = "https://android-tasks-api.herokuapp.com/api/"
-    private const val TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyOTUsImV4cCI6MTYzODg4ODc4OH0.lbmEEh6P2r3Wk4IkiuPADCgz_v8Ot4quj0Hg06ZrYDE"
+class Api(private val context: Context) {
+    companion object {
+        private const val BASE_URL = "https://android-tasks-api.herokuapp.com/api/"
+        lateinit var INSTANCE: Api
+    }
 
     // on construit une instance de parseur de JSON:
     private val jsonSerializer = Json {
@@ -22,13 +25,16 @@ object Api {
     private val converterFactory =
         jsonSerializer.asConverterFactory("application/json".toMediaType())
 
+    fun getToken() : String? = PreferenceManager.getDefaultSharedPreferences(context).getString(SHARED_PREF_TOKEN_KEY, "")
+
+
     // client HTTP
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor { chain ->
                 // intercepteur qui ajoute le `header` d'authentification avec votre token:
                 val newRequest = chain.request().newBuilder()
-                    .addHeader("Authorization", "Bearer $TOKEN")
+                    .addHeader("Authorization", "Bearer ${getToken()}")
                     .build()
                 chain.proceed(newRequest)
             }

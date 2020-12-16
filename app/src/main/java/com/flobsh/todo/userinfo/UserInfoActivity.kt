@@ -94,7 +94,7 @@ class UserInfoActivity : AppCompatActivity() {
 
     private fun handleImage(uri: Uri) {
         lifecycleScope.launch {
-            Api.userService.updateAvatar(convert(uri))
+            Api.INSTANCE.userService.updateAvatar(convert(uri))
         }
     }
 

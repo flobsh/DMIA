@@ -12,7 +12,7 @@ class UserInfoViewModel : ViewModel() {
 
     fun loadUserInfo() {
         viewModelScope.launch {
-            val response = Api.userService.getInfo()
+            val response = Api.INSTANCE.userService.getInfo()
             if (response.isSuccessful) {
                 _userInfo.value = response.body()!!
             }
