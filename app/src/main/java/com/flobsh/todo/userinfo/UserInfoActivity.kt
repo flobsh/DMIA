@@ -20,9 +20,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
 import com.flobsh.todo.network.Api
+import com.flobsh.todo.workers.CoroutineUploadWorker
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -93,9 +97,11 @@ class UserInfoActivity : AppCompatActivity() {
         )
 
     private fun handleImage(uri: Uri) {
-        lifecycleScope.launch {
-            Api.INSTANCE.userService.updateAvatar(convert(uri))
-        }
+        val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>()
+            .setInputData(workDataOf(
+                "IMAGE_URI" to uri.toString()
+            )).build()
+        WorkManager.getInstance(applicationContext).enqueue(uploadWorker)
     }
 
     // create a temp file and get a uri for it
