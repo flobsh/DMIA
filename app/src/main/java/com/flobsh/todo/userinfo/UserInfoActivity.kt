@@ -1,6 +1,7 @@
 package com.flobsh.todo.userinfo
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -20,12 +21,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
 import com.flobsh.todo.network.Api
+import com.flobsh.todo.workers.CoroutineCompressWorker
 import com.flobsh.todo.workers.CoroutineUploadWorker
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
@@ -80,28 +83,28 @@ class UserInfoActivity : AppCompatActivity() {
     }
 
     // register
-    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) handleImage(photoUri)
-        else Toast.makeText(this, "Erreur ! 😢", Toast.LENGTH_LONG).show()
+    @SuppressLint("RestrictedApi")
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        val tmpFile = File.createTempFile("avatar", "jpeg")
+        tmpFile.outputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+        }
+        handleImage(tmpFile.toUri())
     }
 
     // use
-    private fun openCamera() = takePicture.launch(photoUri)
-
-    // convert
-    private fun convert(uri: Uri) =
-        MultipartBody.Part.createFormData(
-            name = "avatar",
-            filename = "temp.jpeg",
-            body = contentResolver.openInputStream(uri)!!.readBytes().toRequestBody()
-        )
+    private fun openCamera() = takePicture.launch()
 
     private fun handleImage(uri: Uri) {
-        val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>()
-            .setInputData(workDataOf(
-                "IMAGE_URI" to uri.toString()
-            )).build()
-        WorkManager.getInstance(applicationContext).enqueue(uploadWorker)
+        val compressWorker = OneTimeWorkRequestBuilder<CoroutineCompressWorker>()
+                .setInputData(workDataOf(
+                        "IMAGE_URI" to uri.toString()
+                )).build()
+        val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>().build()
+        WorkManager.getInstance(applicationContext)
+                .beginWith(compressWorker)
+                .then(uploadWorker)
+                .enqueue()
     }
 
     // create a temp file and get a uri for it
@@ -110,7 +113,6 @@ class UserInfoActivity : AppCompatActivity() {
             this,
             BuildConfig.APPLICATION_ID +".fileprovider",
             File.createTempFile("avatar", ".jpeg", externalCacheDir)
-
         )
     }
 

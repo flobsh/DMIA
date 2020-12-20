@@ -18,9 +18,12 @@ class CoroutineUploadWorker(
     override suspend fun doWork(): Result {
         val imageUriInput = inputData.getString("IMAGE_URI")
         if (imageUriInput.isNullOrEmpty()) {
-            Toast.makeText(applicationContext, "Failed to load image", Toast.LENGTH_LONG).show()
+            // Toast does'nt work in workers
+            // Toast.makeText(applicationContext, "Failed to load image", Toast.LENGTH_LONG).show()
             return  Result.failure()
         }
+
+        Log.e("UPLOAD", imageUriInput)
 
         val image = MultipartBody.Part.createFormData(
             name = "avatar",
@@ -30,10 +33,10 @@ class CoroutineUploadWorker(
 
         val response = Api.INSTANCE.userService.updateAvatar(image)
         return if (response.isSuccessful) {
-            Toast.makeText(applicationContext, "Avatar updated", Toast.LENGTH_LONG).show()
+            // Toast.makeText(applicationContext, "Avatar updated", Toast.LENGTH_LONG).show()
             Result.success()
         } else {
-            Toast.makeText(applicationContext, "Failed to update avatar", Toast.LENGTH_LONG).show()
+            // Toast.makeText(applicationContext, "Failed to update avatar", Toast.LENGTH_LONG).show()
             Result.failure()
         }
     }
