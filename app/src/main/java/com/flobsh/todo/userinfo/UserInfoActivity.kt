@@ -87,7 +87,7 @@ class UserInfoActivity : AppCompatActivity() {
     private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         val tmpFile = File.createTempFile("avatar", "jpeg")
         tmpFile.outputStream().use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it) //remove compresion will be done on a worker on handel images alow to work faster
         }
         handleImage(tmpFile.toUri())
     }
