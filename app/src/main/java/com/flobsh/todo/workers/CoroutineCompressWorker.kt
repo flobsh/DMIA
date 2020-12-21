@@ -22,7 +22,6 @@ class CoroutineCompressWorker(
 
     override suspend fun doWork(): Result {
         val imagePath = inputData.getString("IMAGE_URI")
-
         if (imagePath.isNullOrEmpty()) {
             // Toast.makeText(applicationContext, "Failed to load image", Toast.LENGTH_LONG).show()
             return Result.failure()
@@ -59,7 +58,7 @@ class CoroutineCompressWorker(
         val outputData = Data.Builder()
                 .putString("IMAGE_URI", tmpFile.toUri().toString())
                 .build()
-
+        Toast.makeText(applicationContext, "Compression succeed ", Toast.LENGTH_LONG).show()
         return Result.success(outputData)
     }
 }

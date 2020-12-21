@@ -20,7 +20,7 @@ class CoroutineUploadWorker(
         if (imageUriInput.isNullOrEmpty()) {
             // Toast does'nt work in workers
             // Toast.makeText(applicationContext, "Failed to load image", Toast.LENGTH_LONG).show()
-            return  Result.failure()
+            return Result.failure()
         }
 
         Log.e("UPLOAD", imageUriInput)
@@ -28,7 +28,8 @@ class CoroutineUploadWorker(
         val image = MultipartBody.Part.createFormData(
             name = "avatar",
             filename = "temp.jpeg",
-            body = applicationContext.contentResolver.openInputStream(imageUriInput.toUri())!!.readBytes().toRequestBody()
+            body = applicationContext.contentResolver.openInputStream(imageUriInput.toUri())!!
+                .readBytes().toRequestBody()
         )
 
         val response = Api.INSTANCE.userService.updateAvatar(image)
