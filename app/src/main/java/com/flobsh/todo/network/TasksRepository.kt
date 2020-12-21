@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.flobsh.todo.tasklist.Task
 import com.flobsh.todo.tasklist.TaskListViewModel
+import retrofit2.Response
 
 class TasksRepository {
     private val tasksWebService = Api.INSTANCE.tasksWebService
@@ -15,31 +16,19 @@ class TasksRepository {
     // On pourra seulement l'observer (s'y abonner) depuis d'autres classes
     public val taskList: LiveData<List<Task>> = _taskList
 
-    suspend fun loadTasks(): List<Task>? {
-        val response = tasksWebService.getTasks()
-        return if (response.isSuccessful) response.body() else null
+    suspend fun loadTasks(): Response<List<Task>> {
+        return tasksWebService.getTasks()
     }
 
-    suspend fun addTask(task: Task) : Task? {
-        val response = tasksWebService.createTask(task)
-        return if (response.isSuccessful) response.body() else null
+    suspend fun addTask(task: Task) : Response<Task> {
+        return tasksWebService.createTask(task)
     }
 
-    suspend fun deleteTask(task: Task) : Boolean {
-        val response  = tasksWebService.deleteTask(task.id)
-        return response.isSuccessful
+    suspend fun deleteTask(task: Task) : Response<String> {
+        return tasksWebService.deleteTask(task.id)
     }
 
-    suspend fun updateTask(task: Task) {
-        // Call HTTP (opération longue):
-        val tasksResponse = tasksWebService.updateTask(task)
-        // À la ligne suivante, on a reçu la réponse de l'API:
-        if (tasksResponse.isSuccessful) {
-            val editableList = _taskList.value.orEmpty().toMutableList()
-            val updatedTask = tasksResponse.body()
-            val position = editableList.indexOfFirst { updatedTask!!.id == it.id }
-            editableList[position] = updatedTask!!
-            _taskList.value = editableList
-        }
+    suspend fun editTask(task: Task) : Response<Task> {
+        return tasksWebService.updateTask(task)
     }
 }
