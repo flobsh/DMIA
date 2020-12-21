@@ -84,34 +84,43 @@ class UserInfoActivity : AppCompatActivity() {
 
     // register
     @SuppressLint("RestrictedApi")
-    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        val tmpFile = File.createTempFile("avatar", "jpeg")
-        tmpFile.outputStream().use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it) //remove compresion will be done on a worker on handel images alow to work faster
+    private val takePicture =
+        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+            val tmpFile = File.createTempFile("avatar", "jpeg")
+            tmpFile.outputStream().use {
+                bitmap.compress(
+                    Bitmap.CompressFormat.JPEG,
+                    100,
+                    it
+                ) //remove compresion will be done on a worker on handel images alow to work faster
+            }
+            handleImage(tmpFile.toUri())
         }
-        handleImage(tmpFile.toUri())
-    }
 
     // use
     private fun openCamera() = takePicture.launch()
 
     private fun handleImage(uri: Uri) {
         val compressWorker = OneTimeWorkRequestBuilder<CoroutineCompressWorker>()
-                .setInputData(workDataOf(
-                        "IMAGE_URI" to uri.toString()
-                )).build()
+            .setInputData(
+                workDataOf(
+                    "IMAGE_URI" to uri.toString()
+                )
+            ).build()
+        val sepiaFilterWorker = OneTimeWorkRequestBuilder<CoroutineCompressWorker>().build()
         val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>().build()
         WorkManager.getInstance(applicationContext)
-                .beginWith(compressWorker)
-                .then(uploadWorker)
-                .enqueue()
+            .beginWith(compressWorker)
+            .then(sepiaFilterWorker)
+            .then(uploadWorker)
+            .enqueue()
     }
 
     // create a temp file and get a uri for it
     private val photoUri by lazy {
         FileProvider.getUriForFile(
             this,
-            BuildConfig.APPLICATION_ID +".fileprovider",
+            BuildConfig.APPLICATION_ID + ".fileprovider",
             File.createTempFile("avatar", ".jpeg", externalCacheDir)
         )
     }

@@ -37,7 +37,7 @@ class CoroutineCompressWorker(
         val original = BitmapFactory.decodeStream(readStream)
         val cropped = Bitmap.createBitmap(original, 0, 0, original.width, original.width)
         val resized = Bitmap.createScaledBitmap(cropped, 128, 128, false)
-        lateinit var tmpFile: java.io.File
+        lateinit var tmpFile: File
         try {
             tmpFile = File.createTempFile("resized", "png") ?: return Result.failure()
         } catch (e: java.io.IOException) {
@@ -51,6 +51,7 @@ class CoroutineCompressWorker(
         } catch (e: SecurityException) {
             Log.e("Failed to create file:", "Security Exception : right not allowed on this folder", e)
         }
+
         tmpFile.outputStream().use {
             resized.compress(Bitmap.CompressFormat.PNG, 50, it)
         }
@@ -58,6 +59,7 @@ class CoroutineCompressWorker(
         val outputData = Data.Builder()
                 .putString("IMAGE_URI", tmpFile.toUri().toString())
                 .build()
+
         Toast.makeText(applicationContext, "Compression succeed ", Toast.LENGTH_LONG).show()
         return Result.success(outputData)
     }
