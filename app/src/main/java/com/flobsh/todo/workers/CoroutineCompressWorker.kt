@@ -60,7 +60,7 @@ class CoroutineCompressWorker(
                 .putString("IMAGE_URI", tmpFile.toUri().toString())
                 .build()
 
-        Toast.makeText(applicationContext, "Compression succeed ", Toast.LENGTH_LONG).show()
+        //Toast.makeText(applicationContext, "Compression succeed ", Toast.LENGTH_LONG).show()
         return Result.success(outputData)
     }
 }

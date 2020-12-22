@@ -29,6 +29,7 @@ import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
 import com.flobsh.todo.network.Api
 import com.flobsh.todo.workers.CoroutineCompressWorker
+import com.flobsh.todo.workers.CoroutineSepiaFilterWorker
 import com.flobsh.todo.workers.CoroutineUploadWorker
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
@@ -107,7 +108,7 @@ class UserInfoActivity : AppCompatActivity() {
                     "IMAGE_URI" to uri.toString()
                 )
             ).build()
-        val sepiaFilterWorker = OneTimeWorkRequestBuilder<CoroutineCompressWorker>().build()
+        val sepiaFilterWorker = OneTimeWorkRequestBuilder<CoroutineSepiaFilterWorker>().build()
         val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>().build()
         WorkManager.getInstance(applicationContext)
             .beginWith(compressWorker)
