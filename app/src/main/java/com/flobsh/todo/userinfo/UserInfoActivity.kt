@@ -37,6 +37,13 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 
 class UserInfoActivity : AppCompatActivity() {
+    companion object {
+        private const val WORKER_TAG = "WORKER_TAG"
+        private const val SEPIA_FILTER_WORKER = "SEPIA_FILTER_WORKER"
+        private const val COMPRESS_WORKER = "COMPRESS_WORKER"
+        private const val UPLOAD_WORKER = "UPLOAD_WORKER"
+    }
+
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +59,17 @@ class UserInfoActivity : AppCompatActivity() {
             pickInGallery.launch("image/*")
         }
     }
+
+    private fun observeWorkers() {
+        WorkManager.getInstance(applicationContext)
+                .getWorkInfosByTagLiveData(WORKER_TAG)
+                .observe(this, { workInfoList ->
+                    when {
+                        workInfoList[0].state.isFinished -> Toast.makeText(applicationContext, "Sepia filter succeed", Toast.LENGTH_LONG).show()
+                        workInfoList[1].state.isFinished -> Toast.makeText(applicationContext, "Compression succeed", Toast.LENGTH_LONG).show()
+                        workInfoList[2].state.isFinished -> Toast.makeText(applicationContext, "Upload succeed", Toast.LENGTH_LONG).show()
+                    }
+                })}
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -103,18 +121,26 @@ class UserInfoActivity : AppCompatActivity() {
 
     private fun handleImage(uri: Uri) {
         val compressWorker = OneTimeWorkRequestBuilder<CoroutineCompressWorker>()
-            .setInputData(
-                workDataOf(
-                    "IMAGE_URI" to uri.toString()
+                .setInputData(
+                    workDataOf(
+                        "IMAGE_URI" to uri.toString()
+                    )
                 )
-            ).build()
-        val sepiaFilterWorker = OneTimeWorkRequestBuilder<CoroutineSepiaFilterWorker>().build()
-        val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>().build()
+                .addTag(WORKER_TAG)
+                .build()
+        val sepiaFilterWorker = OneTimeWorkRequestBuilder<CoroutineSepiaFilterWorker>()
+                .addTag(WORKER_TAG)
+                .build()
+        val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>()
+                .addTag(WORKER_TAG)
+                .build()
         WorkManager.getInstance(applicationContext)
             .beginWith(compressWorker)
             .then(sepiaFilterWorker)
             .then(uploadWorker)
             .enqueue()
+
+        observeWorkers()
     }
 
     // create a temp file and get a uri for it
@@ -131,4 +157,5 @@ class UserInfoActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             handleImage(uri)
         }
+
 }

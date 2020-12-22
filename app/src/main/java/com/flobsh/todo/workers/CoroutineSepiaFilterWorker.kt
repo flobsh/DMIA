@@ -40,7 +40,7 @@ class CoroutineSepiaFilterWorker(
         }
         val original = BitmapFactory.decodeStream(readStream)
 
-        val filteredImage = toSephia(original) // apply sepia filter
+        val filteredImage = toSepia(original) // apply sepia filter
 
         // create a file to save filtered image
         lateinit var tmpFile: java.io.File
@@ -84,7 +84,7 @@ class CoroutineSepiaFilterWorker(
         return Result.success(outputData);
     }
 
-    fun toSephia(bmpOriginal: Bitmap): Bitmap {
+    private fun toSepia(bmpOriginal: Bitmap): Bitmap {
         val height = bmpOriginal.height
         val width = bmpOriginal.width
         val depth = 20;
