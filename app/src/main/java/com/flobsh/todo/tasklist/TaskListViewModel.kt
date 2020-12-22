@@ -11,13 +11,15 @@ class TaskListViewModel : ViewModel() {
 
     fun loadTasks() {
         viewModelScope.launch {
-            _taskList.value = repository.loadTasks()
+            val response = repository.loadTasks()
+            _taskList.value = response.body()
         }
     }
 
     fun deleteTask(task: Task) {
         viewModelScope.launch {
-            if (repository.deleteTask(task)) {
+            val response = repository.deleteTask(task)
+            if (response.isSuccessful) {
                 val editableList = _taskList.value.orEmpty().toMutableList()
                 editableList.remove(task)
                 _taskList.value = editableList
@@ -27,14 +29,26 @@ class TaskListViewModel : ViewModel() {
 
     fun addTask(task: Task) {
         viewModelScope.launch {
-            val createdTask = repository.addTask(task)
-            if (createdTask != null) {
+            val response = repository.addTask(task)
+            if (response.isSuccessful) {
+                val addedTask = response.body()
                 val editableList = _taskList.value.orEmpty().toMutableList()
-                editableList.add(createdTask)
+                editableList.add(addedTask!!)
                 _taskList.value = editableList
             }
         }
     }
 
-    fun editTask(task: Task) {}
+    fun editTask(task: Task) {
+        viewModelScope.launch {
+            val response = repository.editTask(task)
+            if (response.isSuccessful) {
+                val editedTask = response.body()
+                val editableList = _taskList.value.orEmpty().toMutableList()
+                val position = editableList.indexOfFirst { editedTask!!.id == it.id }
+                editableList[position] = editedTask!!
+                _taskList.value = editableList
+            }
+        }
+    }
 }

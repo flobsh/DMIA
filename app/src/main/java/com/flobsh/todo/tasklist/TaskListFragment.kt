@@ -27,6 +27,7 @@ import com.flobsh.todo.network.Api
 import com.flobsh.todo.network.TasksRepository
 import com.flobsh.todo.task.TaskActivity
 import com.flobsh.todo.task.TaskActivity.Companion.ADD_TASK_REQUEST_CODE
+import com.flobsh.todo.task.TaskActivity.Companion.EDIT_TASK_REQUEST_CODE
 import com.flobsh.todo.userinfo.UserInfoActivity
 import com.flobsh.todo.userinfo.UserInfoViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -68,6 +69,12 @@ class TaskListFragment : Fragment() {
             userAvatar.load(userInfo.avatar)
         }
 
+        adapter.onEditClickListener = { task ->
+            val intent = Intent(activity, TaskActivity::class.java)
+            intent.putExtra("TASK_TO_EDIT", task)
+            startActivityForResult(intent, EDIT_TASK_REQUEST_CODE)
+        }
+
         adapter.onDeleteClickListener = {
             task -> viewModel.deleteTask(task)
         }
@@ -100,6 +107,10 @@ class TaskListFragment : Fragment() {
         if (requestCode == ADD_TASK_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             val task = data!!.getSerializableExtra(TaskActivity.TASK_KEY) as Task
             viewModel.addTask(task)
+        }
+        else if (requestCode == EDIT_TASK_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val task = data!!.getSerializableExtra(TaskActivity.TASK_KEY) as Task
+            viewModel.editTask(task)
         }
         else {
             super.onActivityResult(requestCode, resultCode, data)

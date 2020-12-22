@@ -17,6 +17,7 @@ import java.util.*
 class TaskActivity : Activity() {
     companion object {
         const val ADD_TASK_REQUEST_CODE = 666
+        const val EDIT_TASK_REQUEST_CODE = 777
         const val TASK_KEY = "NEW_TASK"
     }
 
@@ -27,12 +28,21 @@ class TaskActivity : Activity() {
         val titleEditor = findViewById<EditText>(R.id.title_edit)
         val descriptionEditor = findViewById<EditText>(R.id.description_edit)
 
+        // If this fragment is called to edit a task, we retrieve it
+        val task = intent.getSerializableExtra("TASK_TO_EDIT") as? Task
+        if (task != null) {
+            titleEditor.setText(task.title)
+            descriptionEditor.setText(task.description)
+        }
+
         val button = findViewById<ImageButton>(R.id.ok_button)
         button.setOnClickListener {
-            val newTask = Task(id = UUID.randomUUID().toString(), title = titleEditor.text.toString(), description = descriptionEditor.text.toString())
+            val newTask = Task(id = task?.id ?: UUID.randomUUID().toString(), title = titleEditor.text.toString(), description = descriptionEditor.text.toString())
             intent?.putExtra(TASK_KEY, newTask)
             setResult(RESULT_OK, intent)
             finish()
         }
+
+
     }
 }
