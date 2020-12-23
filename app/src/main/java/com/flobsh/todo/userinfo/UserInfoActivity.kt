@@ -21,10 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
+import androidx.work.*
 import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
 import com.flobsh.todo.network.Api
@@ -132,6 +129,9 @@ class UserInfoActivity : AppCompatActivity() {
                 .addTag(WORKER_TAG)
                 .build()
         val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>()
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(
+                        NetworkType.CONNECTED).build()
+                )
                 .addTag(WORKER_TAG)
                 .build()
         WorkManager.getInstance(applicationContext)

@@ -49,11 +49,6 @@ class TaskListFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        lifecycleScope.launch {
-            val response = Api.INSTANCE.userService.getInfo()
-            Log.e("Created", response.body()?.email ?: "none")
-        }
-
         val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = adapter
