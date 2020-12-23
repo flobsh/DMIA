@@ -12,7 +12,9 @@ class TaskListViewModel : ViewModel() {
     fun loadTasks() {
         viewModelScope.launch {
             val response = repository.loadTasks()
-            _taskList.value = response.body()
+            if (response.isSuccessful) {
+                _taskList.value = response.body()
+            }
         }
     }
 

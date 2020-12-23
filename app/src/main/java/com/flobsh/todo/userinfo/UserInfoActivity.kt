@@ -18,6 +18,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import androidx.work.*
 import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
@@ -60,46 +61,6 @@ class UserInfoActivity : AppCompatActivity() {
         }
     }
 
-    /*
-     /**
-      * Worker observer lunch toast in function of the state of the different worker
-      */
-     private val workerObserver = Observer<List<WorkInfo>> { state ->
-         state?.let {
-             if (!it.isNullOrEmpty()) {
-                 val workInfo = it[0];
-                 when (workInfo.state) {
-                     WorkInfo.State.ENQUEUED -> {
-                         Toast.makeText(
-                             applicationContext,
-                             "Worker2" + workInfoToString(workInfo) + " finished",
-                             Toast.LENGTH_LONG
-                         ).show()
-                     }
-                     WorkInfo.State.RUNNING -> {
-                         Toast.makeText(
-                             applicationContext,
-                             "worker " + workInfoToString(workInfo) + " running ",
-                             Toast.LENGTH_LONG
-                         ).show()
-                     }
-                     WorkInfo.State.SUCCEEDED -> {
-                         Toast.makeText(
-                             applicationContext,
-                             "worker:+ " + workInfoToString(workInfo) + " succeed",
-                             Toast.LENGTH_LONG
-                         ).show()
-                     }
-                     else -> Toast.makeText(
-                         applicationContext,
-                         "worker:+ " + workInfoToString(workInfo) + " response not handled yet ",
-                         Toast.LENGTH_LONG
-                     ).show()
-                 }
-             }
-         }
-     }
- */
     fun HandelWorkInfoState(workInfostate: WorkInfo.State, workerType: String): String {
         return workerType +
                 when (workInfostate) {
@@ -228,8 +189,11 @@ class UserInfoActivity : AppCompatActivity() {
             .addTag(SEPIA_FILTER_WORKER)
             .build()
         val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>()
-            .addTag(UPLOAD_WORKER)
-            .build()
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(
+                        NetworkType.CONNECTED).build()
+                )
+                .addTag(UPLOAD_WORKER)
+                .build()
         WorkManager.getInstance(applicationContext)
             .beginWith(compressWorker)
             .then(sepiaFilterWorker)
