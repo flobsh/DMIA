@@ -2,15 +2,13 @@ package com.flobsh.todo.userinfo
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.AttributeSet
-import android.view.View
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,20 +18,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.lifecycle.lifecycleScope
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
+import androidx.work.*
 import com.flobsh.todo.BuildConfig
 import com.flobsh.todo.R
-import com.flobsh.todo.network.Api
 import com.flobsh.todo.workers.CoroutineCompressWorker
 import com.flobsh.todo.workers.CoroutineSepiaFilterWorker
 import com.flobsh.todo.workers.CoroutineUploadWorker
-import kotlinx.coroutines.launch
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 
 class UserInfoActivity : AppCompatActivity() {
@@ -60,16 +50,122 @@ class UserInfoActivity : AppCompatActivity() {
         }
     }
 
+    fun workInfoToString(workInfo: WorkInfo): String {
+        Log.e("Worker info ", "aaa" + workInfo.tags)
+        return when (workInfo.tags.first()) {
+            COMPRESS_WORKER -> "Compress"
+            UPLOAD_WORKER -> "Upload"
+            SEPIA_FILTER_WORKER -> "Sepia filter"
+            else -> "not handeled "
+        }
+    }
+
+    /*
+     /**
+      * Worker observer lunch toast in function of the state of the different worker
+      */
+     private val workerObserver = Observer<List<WorkInfo>> { state ->
+         state?.let {
+             if (!it.isNullOrEmpty()) {
+                 val workInfo = it[0];
+                 when (workInfo.state) {
+                     WorkInfo.State.ENQUEUED -> {
+                         Toast.makeText(
+                             applicationContext,
+                             "Worker2" + workInfoToString(workInfo) + " finished",
+                             Toast.LENGTH_LONG
+                         ).show()
+                     }
+                     WorkInfo.State.RUNNING -> {
+                         Toast.makeText(
+                             applicationContext,
+                             "worker " + workInfoToString(workInfo) + " running ",
+                             Toast.LENGTH_LONG
+                         ).show()
+                     }
+                     WorkInfo.State.SUCCEEDED -> {
+                         Toast.makeText(
+                             applicationContext,
+                             "worker:+ " + workInfoToString(workInfo) + " succeed",
+                             Toast.LENGTH_LONG
+                         ).show()
+                     }
+                     else -> Toast.makeText(
+                         applicationContext,
+                         "worker:+ " + workInfoToString(workInfo) + " response not handled yet ",
+                         Toast.LENGTH_LONG
+                     ).show()
+                 }
+             }
+         }
+     }
+ */
+    fun HandelWorkInfoState(workInfostate: WorkInfo.State, workerType: String): String {
+        return workerType +
+                when (workInfostate) {
+                    WorkInfo.State.SUCCEEDED -> " succed "
+                    WorkInfo.State.FAILED -> " Failed"
+                    WorkInfo.State.RUNNING -> " Running"
+                    WorkInfo.State.BLOCKED -> " Blocked"
+                    WorkInfo.State.CANCELLED -> " Cancelled"
+                    WorkInfo.State.ENQUEUED -> " Enqueued"
+                }
+    }
+
     private fun observeWorkers() {
         WorkManager.getInstance(applicationContext)
-                .getWorkInfosByTagLiveData(WORKER_TAG)
-                .observe(this, { workInfoList ->
-                    when {
-                        workInfoList[0].state.isFinished -> Toast.makeText(applicationContext, "Sepia filter succeed", Toast.LENGTH_LONG).show()
-                        workInfoList[1].state.isFinished -> Toast.makeText(applicationContext, "Compression succeed", Toast.LENGTH_LONG).show()
-                        workInfoList[2].state.isFinished -> Toast.makeText(applicationContext, "Upload succeed", Toast.LENGTH_LONG).show()
+            .getWorkInfosByTagLiveData(SEPIA_FILTER_WORKER)
+            .observe(this, { workInfoList ->
+                if (workInfoList.isNullOrEmpty())
+                    Toast.makeText(applicationContext, "no worker active", Toast.LENGTH_LONG).show()
+                else {
+                    val workInfo = workInfoList[0]
+
+                    Toast.makeText(
+                        applicationContext,
+                        HandelWorkInfoState(workInfo.state, "Sepia filter "),
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                }
+            }
+            )
+        WorkManager.getInstance(applicationContext)
+            .getWorkInfosByTagLiveData(UPLOAD_WORKER)
+            .observe(this,
+                { workInfoList ->
+                    if (workInfoList.isNullOrEmpty())
+                        Toast.makeText(applicationContext, "no worker active", Toast.LENGTH_LONG)
+                            .show()
+                    else {
+                        val workInfo = workInfoList[0]
+                            Toast.makeText(
+                                applicationContext,
+                                HandelWorkInfoState(workInfo.state, "Upload "),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                }
+            )
+        WorkManager.getInstance(applicationContext)
+            .getWorkInfosByTagLiveData(COMPRESS_WORKER)
+            .observe(this,
+                { workInfoList ->
+                    if (workInfoList.isNullOrEmpty())
+                        Toast.makeText(applicationContext, "no worker active", Toast.LENGTH_LONG)
+                            .show()
+                    else {
+                        val workInfo = workInfoList[0]
+                        Toast.makeText(
+                            applicationContext,
+                            HandelWorkInfoState(workInfo.state, "Compress "),
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
-                })}
+                }
+            )
+    }
+
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -121,19 +217,19 @@ class UserInfoActivity : AppCompatActivity() {
 
     private fun handleImage(uri: Uri) {
         val compressWorker = OneTimeWorkRequestBuilder<CoroutineCompressWorker>()
-                .setInputData(
-                    workDataOf(
-                        "IMAGE_URI" to uri.toString()
-                    )
+            .setInputData(
+                workDataOf(
+                    "IMAGE_URI" to uri.toString()
                 )
-                .addTag(WORKER_TAG)
-                .build()
+            )
+            .addTag(COMPRESS_WORKER)
+            .build()
         val sepiaFilterWorker = OneTimeWorkRequestBuilder<CoroutineSepiaFilterWorker>()
-                .addTag(WORKER_TAG)
-                .build()
+            .addTag(SEPIA_FILTER_WORKER)
+            .build()
         val uploadWorker = OneTimeWorkRequestBuilder<CoroutineUploadWorker>()
-                .addTag(WORKER_TAG)
-                .build()
+            .addTag(UPLOAD_WORKER)
+            .build()
         WorkManager.getInstance(applicationContext)
             .beginWith(compressWorker)
             .then(sepiaFilterWorker)
